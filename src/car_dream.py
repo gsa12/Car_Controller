@@ -26,5 +26,5 @@ def smart_car(p):
 
 
 if __name__=="__main__":
-    p = 5000
+    p = 50000
     smart_car(p)
