@@ -8,13 +8,13 @@ import sys
 
 class CarClient:
     """
-    A client class that enables some basic controls over the car.
+    A client_src class that enables some basic controls over the car.
     The constructor automatically connects to the raspberry pi.
     """
 
     def __init__(self, ip_host="10.42.0.1", port=50000, seconds = 892):
         """
-            A client class that enables some basic controls over the car.
+            A client_src class that enables some basic controls over the car.
             The constructor automatically connects to the raspberry pi.
             Args:
                 ip_host (str): The ip address of the server
@@ -62,7 +62,7 @@ class CarClient:
         already_running = self.already_running
 
         if client_socket is None:
-            print("There isn't a client to send the command to.")
+            print("There isn't a client_src to send the command to.")
             return
         else:
             try:
@@ -73,7 +73,6 @@ class CarClient:
                     print(f"Server response: {response}")
                 else:
                     for n in range(number_of_responses):
-                        a = 1+1
                         response = client_socket.recv(1024).decode()
                         print(f"Server response: {response}")
                 if not already_running and command != "STOP" and command != "END":
