@@ -1,4 +1,5 @@
-A small repo with all the code developed for my autonomous car project!!
+A small repo with all the code developed for my autonomous car project!!  
+Below there's basic information about the file/folder scheme of this repository.
 
 ---
   
