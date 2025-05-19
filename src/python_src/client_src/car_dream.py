@@ -18,11 +18,6 @@ def smart_car(p):
                     break
     except Exception as e:
         print(f"There has been an error: {e}")
-    finally:
-        client.send_command("END")
-        client.frame_updater_close()
-        client.disconnect()
-        cv2.destroyAllWindows()
 
 
 if __name__=="__main__":
