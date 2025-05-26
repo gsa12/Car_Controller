@@ -1,6 +1,7 @@
 import cv2
 from client_class import CarClient
 
+
 def ex1(p):
     command = ""
     try:
@@ -25,11 +26,12 @@ def ex2(p):
         print(f"There has been an error: {e}")
     finally:
         client.send_command("END")
-        client.frame_updater_close()
+        client.frame_updater(close=True)
         client.disconnect()
         cv2.destroyAllWindows()
 
 def __ex3():
+    #cam = cv2.VideoCapture("http://192.168.1.97:5000/raw_stream")
     cam = cv2.VideoCapture("http://10.42.0.1:5000/raw_stream")
     while True:
         flag, cap = cam.read()
@@ -42,6 +44,6 @@ def __ex3():
 
 if __name__== "__main__":
     p = 50000
-    ex1(p)
+    #ex1(p)
     #ex2(p)
-    #__ex3()
+    __ex3()

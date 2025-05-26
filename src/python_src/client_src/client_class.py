@@ -30,8 +30,6 @@ class CarClient:
 
         self.__video_thread = None
         self.__stop_video_thread = threading.Event()
-        self.__frame_returner_thread = None
-        self.__stop_frame_returner = threading.Event()
 
         if self.__connect() < 0:
             raise Exception("It was not possible to establish a connection.")
@@ -44,8 +42,6 @@ class CarClient:
         if self.__video_thread is not None:
             self.__stop_video_thread.set()
             self.__video_thread.join()
-        if self.__frame_returner_thread is not None:
-            self.__stop_frame_returner.set()
         self.client_socket.close()
         print("The connection has been closed.")
         return 1
@@ -102,25 +98,28 @@ class CarClient:
                 print(f"It wasn't possible to send the command, {e}")
 
 
-    def frame_updater(self) :
+    def frame_updater(self, vid_port="5000", close=False):
         """
-            Used when the user desires to treat the image received.
-            Puts a numpy array with the current video frame on the current_frame variable, or none, if there was an error.
+            Updates self.current_frame with the most recent frame from the video stream. If there was
+            an error, the variable will be set to None. If you wish to close the video stream, set close to True.
+            Call this method each time you want to update the frame.
         """
+
         if self.client_socket is None:
             print("There hasn't been established any connection yet.")
             return None
 
-        self.__frame_returner_thread = threading.Thread(target=self.__frame_updater_aux)
-        self.__frame_returner_thread.start()
-
-
-    def frame_updater_close(self):
-        if self.__frame_returner_thread is None:
-            print("The frame updater method isn't being run.")
-        else:
-            self.__stop_frame_returner.set()
-            self.__frame_returner_thread.join()
+        stream_url = f"http://{self.ip_host}:{vid_port}/raw_stream"
+        video_cap = cv2.VideoCapture(stream_url)
+        if video_cap.isOpened():
+            ret, frame = video_cap.read()
+            if ret:
+                self.current_frame = frame
+            else:
+                print("There has been an error retrieving the frame.")
+                self.current_frame = None
+        if close:
+            video_cap.release()
 
 
     def __wasd_sender(self):
@@ -199,22 +198,3 @@ class CarClient:
         cv2.destroyAllWindows()
 
         return 0
-
-
-    def __frame_updater_aux(self, vid_port="5000"):
-        video_cap = None
-        try:
-            self.client_socket.send("CAM".encode())
-            stream_url = "http://" + self.ip_host + ":" + vid_port + "/raw_stream"
-            video_cap = cv2.VideoCapture(stream_url)
-
-            while not self.__stop_frame_returner.is_set():
-                if video_cap.isOpened():
-                    ret, frame = video_cap.read()
-                    if ret:
-                        self.current_frame = frame
-                    else:
-                        print("There has been an error retrieving the frame.")
-                        self.current_frame = None
-        finally:
-            video_cap.release()
