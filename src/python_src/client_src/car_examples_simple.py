@@ -32,7 +32,8 @@ def ex2(p):
 
 def __ex3():
     #cam = cv2.VideoCapture("http://192.168.1.97:5000/raw_stream")
-    cam = cv2.VideoCapture("http://10.42.0.1:5000/raw_stream")
+    #cam = cv2.VideoCapture("http://10.42.0.1:5000/raw_stream")
+    cam = cv2.VideoCapture("udp://10.42.0.1:5000")
     while True:
         flag, cap = cam.read()
         if not flag:
