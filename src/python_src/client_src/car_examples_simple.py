@@ -1,4 +1,4 @@
-import cv2
+﻿import cv2
 from client_class import CarClient
 
 
