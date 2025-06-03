@@ -1,5 +1,6 @@
 import cv2
 from client_class import CarClient
+from ai_funcs import ai_depth
 
 
 def ex1(p):
@@ -32,15 +33,27 @@ def ex2(p):
 
 def __ex3():
     #cam = cv2.VideoCapture("http://192.168.1.97:5000/raw_stream")
-    #cam = cv2.VideoCapture("http://10.42.0.1:5000/raw_stream")
-    cam = cv2.VideoCapture("udp://10.42.0.1:5000")
+    cam = cv2.VideoCapture("http://10.42.0.1:5000/raw_stream")
+    #cam = cv2.VideoCapture("udp://10.42.0.1:5000")
     while True:
         flag, cap = cam.read()
+        cap = cv2.flip(cap, 1)
         if not flag:
             pass
         cv2.imshow("Example n3", cap)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+
+def __ex4():
+    #cam = cv2.VideoCapture("http://192.168.1.97:5000/raw_stream")
+    cam = cv2.VideoCapture("http://10.42.0.1:5000/raw_stream")
+    #cam = cv2.VideoCapture("udp://10.42.0.1:5000")
+
+    flag, cap = cam.read()
+    if not flag:
+        pass
+
+    ai_depth(cap)
 
 
 if __name__== "__main__":
@@ -48,3 +61,4 @@ if __name__== "__main__":
     #ex1(p)
     #ex2(p)
     __ex3()
+    #__ex4()
