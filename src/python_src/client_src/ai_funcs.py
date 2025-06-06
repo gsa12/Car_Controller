@@ -2,7 +2,6 @@ import time
 import cv2
 import torch
 import urllib.request
-import torch_directml
 import matplotlib.pyplot as plt
 import numpy as np
 from ultralytics import YOLO
@@ -11,9 +10,8 @@ from ultralytics import YOLO
 #model_type = "DPT_Hybrid"   # MiDaS v3 - Hybrid    (medium accuracy, medium inference speed)
 model_type = "MiDaS_small"  # MiDaS v2.1 - Small   (lowest accuracy, highest inference speed)
 midas = torch.hub.load("intel-isl/MiDaS", model_type)
-# device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-#device = torch_directml.device() if torch_directml.is_available() else torch.device("cpu")
-device =  torch.device("cpu")
+device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+#device =  torch.device("cpu")
 print("Using device:", device)
 midas.to(device)
 midas.eval()
