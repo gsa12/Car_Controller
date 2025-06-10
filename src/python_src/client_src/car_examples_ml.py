@@ -47,15 +47,24 @@ def __ex4(p):
     client = None
     try:
         client = CarClient(port=p)
-        while True:
+        running = True
+        while running:
             client.frame_updater()
-            ex_ai_objects(client.current_frame)
+            if client.current_frame is not None:
+                ret = ex_ai_objects(client.current_frame)
+                # If ex_ai_objects returns None (e.g., user pressed 'q'), exit the loop
+                if ret is None:
+                    running = False
+            else:
+                print("No frame available")
+                time.sleep(0.1)  # Prevent CPU overuse when no frames are available
     except Exception as e:
         print(f"There has been an error: {e}")
     finally:
-        client.send_command("END")
-        client.frame_updater(close=True)
-        client.disconnect()
+        if client:
+            client.send_command("END")
+            client.frame_updater(close=True)
+            client.disconnect()
         cv2.destroyAllWindows()
 
 ##------------- Functions using ML models ------------------##
