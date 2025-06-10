@@ -55,7 +55,6 @@ class CarClient:
         """
         command = command.upper()
         client_socket = self.client_socket
-        already_running = self.already_running
 
         if client_socket is None:
             print("There isn't a client_src to send the command to.")
@@ -71,7 +70,7 @@ class CarClient:
                     for n in range(number_of_responses):
                         response = client_socket.recv(1024).decode()
                         print(f"Server response: {response}")
-                if not already_running and command != "STOP" and command != "END":
+                if not self.already_running and command != "STOP" and command != "END":
                     if command in ["CAM", "AUTO"]:
                         self.__video_thread = threading.Thread(target=self.__aux_vid)
                         self.__video_thread.start()
@@ -83,16 +82,16 @@ class CarClient:
                         self.__video_thread = threading.Thread(target=self.__aux_vid)
                         self.__video_thread.start()
                         print("Oops still in development. Only the video feed will be shown.")
-                elif already_running and command == "STOP":
+                elif self.already_running and command == "STOP":
                     self.__stop_video_thread.set()
                     time.sleep(0.2)
                     self.already_running = False
                     print("The video feed has been closed")
-                elif already_running and command == "END":
+                elif self.already_running and command == "END":
                     self.disconnect()
                     time.sleep(0.2)
                     cv2.destroyAllWindows()
-                elif already_running:
+                elif self.already_running:
                     print("Command unavailable. Since a camera feed is already running, you can only insert the commands STOP or END")
             except Exception as e:
                 print(f"It wasn't possible to send the command, {e}")
@@ -120,7 +119,8 @@ class CarClient:
                 self.current_frame = None
         if close:
             video_cap.release()
-
+            return None
+        return None
 
     def __wasd_sender(self):
         """
@@ -134,8 +134,6 @@ class CarClient:
                 if k.is_pressed("c"):
                     message = "c"
                     self.client_socket.send(message.encode())
-                    sys.stdin.flush()
-                    #To delete the WASD sender buffer
                     time.sleep(0.5)
                     print("Manual mode closed.")
                     return 1
@@ -151,7 +149,7 @@ class CarClient:
                 if k.is_pressed("d"):
                     message = "r"
                     self.client_socket.send(message.encode())
-                time.sleep(0.05)
+                time.sleep(0.015)  # To avoid unnecessary CPU usage
         except Exception as e:
             print(f"Error while sending direction commands, {e}")
             return -1
