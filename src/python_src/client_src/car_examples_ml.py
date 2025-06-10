@@ -188,8 +188,6 @@ def ex_ai_objects(img_provided=None):
         if key == ord('q'):
             return None
 
-        return frame
-
     finally:
         # Always release the video capture if it was created
         if videoCap is not None and not was_img_provided:
