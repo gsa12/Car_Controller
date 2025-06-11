@@ -21,6 +21,7 @@ def __ex1(p):
             client.frame_updater(close=True)
             client.disconnect()
 
+
 def __ex2(p):
     client = None
     try:
@@ -39,7 +40,6 @@ def __ex2(p):
             client.frame_updater(close=True)
             client.disconnect()
             cv2.destroyAllWindows()
-
 
 
 if __name__== "__main__":
