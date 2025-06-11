@@ -48,7 +48,7 @@ def __ex4(p):
     try:
         client = CarClient(port=p)
         running = True
-        while running:
+        while True:
             client.frame_updater()
             if client.current_frame is not None:
                 ret = ex_ai_objects(client.current_frame)
@@ -196,7 +196,9 @@ def ex_ai_objects(img_provided=None):
 
 if __name__ == "__main__":
     p = 50002
-    ex_ai_depth()  # You can pass a file path or a NumPy array as an argument if needed
+    # ex_ai_depth()  # You can pass a file path or a NumPy array as an argument if needed
     # ex_ai_tests("path_to_your_image.jpg")  # Example of passing a file path
     # ex_ai_tests(np.random.rand(480, 640, 3))  # Example of passing a random NumPy array
     # ex_ai_objects()  # You can pass a file path or a NumPy array as an argument if needed
+    # __ex3(p)
+    __ex4(p)

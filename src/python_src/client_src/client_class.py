@@ -3,7 +3,6 @@ import time
 import threading
 import cv2
 import keyboard as k
-import sys
 
 
 class CarClient:
@@ -78,15 +77,14 @@ class CarClient:
                         self.__video_thread = threading.Thread(target=self.__aux_vid)
                         self.__video_thread.start()
                         self.__wasd_sender()
-                    if command == "SMART":
-                        self.__video_thread = threading.Thread(target=self.__aux_vid)
-                        self.__video_thread.start()
-                        print("Oops still in development. Only the video feed will be shown.")
                 elif self.already_running and command == "STOP":
                     self.__stop_video_thread.set()
                     time.sleep(0.2)
                     self.already_running = False
                     print("The video feed has been closed")
+                elif not self.already_running and command == "STOP":
+                    print("There was not anything to stop.")
+                    return -1
                 elif self.already_running and command == "END":
                     self.disconnect()
                     time.sleep(0.2)
