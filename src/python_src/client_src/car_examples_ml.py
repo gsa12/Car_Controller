@@ -48,12 +48,12 @@ def __ex4(p):
     try:
         client = CarClient(port=p)
         running = True
-        while True:
+        while running:
             client.frame_updater()
             if client.current_frame is not None:
                 ret = ex_ai_objects(client.current_frame)
                 # If ex_ai_objects returns None (e.g., user pressed 'q'), exit the loop
-                if ret is None:
+                if ret == -1:
                     running = False
             else:
                 print("No frame available")
@@ -186,7 +186,7 @@ def ex_ai_objects(img_provided=None):
         # wait for key press with timeout
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
-            return None
+            return -1
 
     finally:
         # Always release the video capture if it was created

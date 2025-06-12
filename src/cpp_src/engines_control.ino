@@ -20,7 +20,7 @@ String receivedData;
 DFRobot_VL53L0X sensor;
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   Wire.begin();
   sensor.begin(0x50);
   sensor.setMode(sensor.eContinuous,sensor.eHigh);
@@ -39,16 +39,23 @@ void setup() {
   pinMode(benL, OUTPUT);
   pinMode(fenR, OUTPUT);
   pinMode(fenL, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
 }
 
-void loop() {
+//void loop(){
+//  //manualCar();
+//  //Serial.println(distMeasure());
+//  //Serial.println(sensor.getDistance());
+//  //delay(500);
+//  autoCar();
+//}
 
-  Serial.println(distMeasure());
+void loop(){
   if (Serial.available() > 0) {
     receivedData = Serial.readStringUntil('\n');
     flag = receivedData.toInt();
   }
-  
+
   if(flag == 0){
     carStop();
   }
@@ -58,96 +65,94 @@ void loop() {
   else if(flag == 2){
     manualCar();
   }
-  else if(flag == 3){                 //"Smart" mode only uses the distance sensor for emergency braking
-    smartCar();
-  }
-  
-}
-
-void smartCar(){
-  while(receivedData != "q"){
-    if(distMeasure() < 12.0 || sensor.getDistance() < 90.0){ 
-      carStop();
-      delay(1000);
-      carBackwards();  
-      delay(1000);
-    }
-    if(Serial.available() > 0) {
-      receivedData = Serial.readStringUntil('\n');
-    }
+  else{
+    carStop();
   }
 }
 
 void autoCar(){
   unsigned long currentMillis = millis();
-  
-    if(currentMillis - previousMillis >= interval){
-      dist = distMeasure();
-      previousMillis = currentMillis;
-      resultsPrint(dist); 
-    }
+  while(true){
 
-    if(sensor.getDistance() < 80){
-      carStop();
-    }
-  
-    if(dist > 24){
-      carForwardVarSpeed(dist,5);
-    } 
-    else if(dist <= 24){
-      unsigned long timeSinceTurning = millis();
-      carStop();
-      delay(500);
-      if(LR_Flag == false){
-        while((dist = distMeasure()) <= 24 || millis() - timeSinceTurning < 1500){          //millis returns the time the board has been running. SO it has to turn for, at least, one second
-          carLeftTurn();
+      if(Serial.available() > 0) {
+        receivedData = Serial.readStringUntil('\n');
+        if(receivedData == "STOP"){
+          carStop();
+          flag = 0;
+          break;
         }
-        LR_Flag = !LR_Flag;
+      }
+
+      if(sensor.getDistance() > 130){
+        carStop();
       }
       else{
-        while((dist = distMeasure()) <= 24  || millis() - timeSinceTurning < 1500){
-          carRightTurn();
+        dist = distMeasure();
+        if(dist > 24){
+          carForwardVarSpeed(dist,4);
         }
-        LR_Flag = !LR_Flag;
+        else if(dist <= 24){
+          unsigned long timeSinceTurning = millis();
+          carStop();
+          delay(500);
+          if(LR_Flag == false){
+            while((dist = distMeasure()) <= 24 || millis() - timeSinceTurning < 1500){          //millis returns the time the board has been running. SO it has to turn for, at least, one second
+              carLeftTurn();
+            }
+            LR_Flag = !LR_Flag;
+          }
+          else{
+            while((dist = distMeasure()) <= 24  || millis() - timeSinceTurning < 1500){
+              carRightTurn();
+            }
+            LR_Flag = !LR_Flag;
+          }
+          carStop();
+          delay(500);
+        }
       }
-      carStop();
-      delay(500);
-    }
+  }
 }
 
 void manualCar(){
   setSpeedLow();
+
     while(true){
-      
-      if(sensor.getDistance() < 80){
+      if(sensor.getDistance() > 130 || distMeasure() < 15.0){
+        while(sensor.getDistance() > 130|| distMeasure() < 15.0){
+          carStop();
+          delay(500);
+          carBackwards();
+          delay(300);
+        }
         carStop();
-        carBackwards();
-        delay(500);
+        delay(200);
       }
       else{
-        receivedData=Serial.readStringUntil('\n');
-        if(receivedData == "c"){
-          carStop();
-          break;
-        }
-        if(receivedData == "f"){
-          carForwardFixedSpeed();
-        }
-        else if(receivedData == "l"){
-          carLeftTurn();
-          delay(250);
-        }
-        else if(receivedData == "b"){
-          carBackwards();
-        }
-        else if(receivedData == "r"){
-          carRightTurn();
-          delay(250);
-        }
-        else{
-          carStop();
-        }
+       if(Serial.available() > 0){
+         receivedData=Serial.readStringUntil('\n');
+         if(receivedData == "c"){
+           carStop();
+           flag = 0;
+           break;
+         }
+         if(receivedData == "f"){
+           carForwardFixedSpeed();
+         }
+         else if(receivedData == "l"){
+           carLeftTurn();
+         }
+         else if(receivedData == "b"){
+           carBackwards();
+         }
+         else if(receivedData == "r"){
+           carRightTurn();
+         }
       }
+      else{
+         carStop();
+       }
+     }
     }
 }
 
@@ -160,8 +165,8 @@ float distMeasure(){
   delayMicroseconds(2);
 
   duration = pulseIn(echoPin, HIGH);     //Measures the time the echo pin takes to recieve a "HIGH" input;
-  
-  return (duration*0.0343)/2;  
+
+  return (duration*0.0343)/2;
 }
 
 void resultsPrint(float dist){
@@ -193,7 +198,7 @@ void carForwardEnable(){        //Func just to set the driver pins for the car t
   digitalWrite(fl1, HIGH);
   digitalWrite(fl2, LOW);
   digitalWrite(fr1, LOW);
-  digitalWrite(fr2, HIGH);  
+  digitalWrite(fr2, HIGH);
 }
 
 
@@ -207,7 +212,7 @@ void carBackwards(){
   digitalWrite(fl1, LOW);
   digitalWrite(fl2, HIGH);
   digitalWrite(fr1, HIGH);
-  digitalWrite(fr2, LOW); 
+  digitalWrite(fr2, LOW);
 }
 
 void carForwardFixedSpeed(){
@@ -254,5 +259,5 @@ void setSpeedLow(){
   analogWrite(benR, 120);
   analogWrite(benL, 120);
   analogWrite(fenR, 120);
-  analogWrite(fenL, 120);  
+  analogWrite(fenL, 120);
 }
