@@ -12,7 +12,6 @@ model_type = "DPT_Large"     # MiDaS v3 - Large     (highest accuracy, slowest i
 #model_type = "MiDaS_small"  # MiDaS v2.1 - Small   (lowest accuracy, highest inference speed)
 midas = torch.hub.load("intel-isl/MiDaS", model_type)
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-#device =  torch.device("cpu")
 print("Using device:", device)
 midas.to(device)
 midas.eval()
@@ -48,18 +47,24 @@ def __ex4(p):
     try:
         client = CarClient(port=p)
         running = True
-        while running:
-            client.frame_updater()
-            if client.current_frame is not None:
-                ret = ex_ai_objects(client.current_frame)
-                # If ex_ai_objects returns None (e.g., user pressed 'q'), exit the loop
-                if ret == -1:
-                    running = False
-            else:
-                print("No frame available")
-                time.sleep(0.1)  # Prevent CPU overuse when no frames are available
+        ans = input("Stream? (y/n): ").strip().lower()
+        if ans == 'n':
+            while running:
+                client.frame_updater()
+                if client.current_frame is not None:
+                    ret = ex_ai_objects(client.current_frame)
+                    # If ex_ai_objects returns None (e.g., user pressed 'q'), exit the loop
+                    if ret == -1:
+                        running = False
+                else:
+                    print("No frame available")
+                    time.sleep(0.1)  # Prevent CPU overuse when no frames are available
+        else:
+            ex_ai_objects("http://10.42.0.1:5000/raw_stream")
     except Exception as e:
         print(f"There has been an error: {e}")
+        print(f"Showing the default depth map.")
+        ex_ai_objects()
     finally:
         if client:
             client.send_command("END")
@@ -118,29 +123,24 @@ def ex_ai_depth(img_provided=None):
     plt.show()  # This will actually display the images
 
 
-def ex_ai_objects(img_provided=None):
-    """
-        This function tests the AI capabilities of the car.
-        It uses a pre-trained model to detect objects in an image.
-    """
-
-    # Define videoCap properly
+def ex_ai_objects(img_source=None, single_frame=False):
+    frame = None
     videoCap = None
-    was_img_provided = False
 
     try:
         # Load the video capture
-        if img_provided is None:
-            videoCap = cv2.VideoCapture("http://10.42.0.1:5000/raw_stream")
-            ret, frame = videoCap.read()
-            if not ret:
-                print("Failed to capture video stream.")
-                return None
+        if isinstance(img_source, str):
+            videoCap = cv2.VideoCapture(img_source)
+            if not videoCap.isOpened():
+                print(f"Failed to open video source: {img_source}")
+                return -1
+        elif img_source is None:
+            url, filename = ("https://github.com/pytorch/hub/raw/master/images/dog.jpg", "dog.jpg")
+            urllib.request.urlretrieve(url, filename)
+            frame = cv2.imread(filename)
         else:
-            frame = img_provided
-            was_img_provided = True
+            frame = img_source
 
-        # Function to get class colors
         def getColours(cls_num):
             base_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
             color_index = cls_num % len(base_colors)
@@ -149,49 +149,74 @@ def ex_ai_objects(img_provided=None):
                      (cls_num // len(base_colors)) % 256 for i in range(3)]
             return tuple(color)
 
-        results = yolo.track(frame, stream=True)
+        def display_results(results, current_frame):
+            for result in results:
+                # get the classes names
+                classes_names = result.names
 
-        for result in results:
-            # get the classes names
-            classes_names = result.names
+                # iterate over each box
+                for box in result.boxes:
+                    # check if confidence is greater than 50 percent
+                    if box.conf[0] > 0.5:
+                        # get coordinates
+                        [x1, y1, x2, y2] = box.xyxy[0]
+                        # convert to int
+                        x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
 
-            # iterate over each box
-            for box in result.boxes:
-                # check if confidence is greater than 50 percent
-                if box.conf[0] > 0.5:
-                    # get coordinates
-                    [x1, y1, x2, y2] = box.xyxy[0]
-                    # convert to int
-                    x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+                        # get the class
+                        cls = int(box.cls[0])
 
-                    # get the class
-                    cls = int(box.cls[0])
+                        # Get tracking ID if available
+                        tracking_id = None
+                        if hasattr(box, 'id') and box.id is not None:
+                            tracking_id = int(box.id[0])
 
-                    # get the class name
-                    class_name = classes_names[cls]
+                        # get the respective colour
+                        colour = getColours(cls)
 
-                    # get the respective colour
-                    colour = getColours(cls)
+                        # draw the rectangle
+                        cv2.rectangle(current_frame, (x1, y1), (x2, y2), colour, 2)
 
-                    # draw the rectangle
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), colour, 2)
+                        # put the class name and confidence on the image
+                        label = f'{classes_names[cls]} {box.conf[0]:.2f}'
+                        if tracking_id is not None:
+                            label += f' ID:{tracking_id}'
+                        cv2.putText(current_frame, label, (x1, y1),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, colour, 2)
+            # show the image
+            cv2.imshow('Object Tracking', current_frame)
 
-                    # put the class name and confidence on the image
-                    cv2.putText(frame, f'{classes_names[int(box.cls[0])]} {box.conf[0]:.2f}', (x1, y1),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, colour, 2)
+        if videoCap is not None:
+            while videoCap.isOpened():
+                ret, current_frame = videoCap.read()
+                if not ret:
+                    print("Failed to read frame from stream")
+                    break
 
-        # show the image
-        cv2.imshow('frame', frame)
+                # Process with tracking enabled
+                res = yolo.track(source=current_frame, persist=True)
+                display_results(res, current_frame)
 
-        # wait for key press with timeout
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord('q'):
-            return -1
+                # Check for quit key
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    return -1
+        else:
+            # Process single frame
+            res = yolo.predict(source=frame)
+            display_results(res, frame)
+
+            # wait for key press with timeout
+            key_wait = 0 if single_frame else 1
+            if cv2.waitKey(key_wait) & 0xFF == ord('q'):
+                return -1
+
+        return None
 
     finally:
-        # Always release the video capture if it was created
-        if videoCap is not None and not was_img_provided:
+        if videoCap is not None:
             videoCap.release()
+
+
 
 
 if __name__ == "__main__":

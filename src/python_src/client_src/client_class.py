@@ -45,7 +45,7 @@ class CarClient:
         print("The connection has been closed.")
         return 1
 
-
+    # noinspection PyInconsistentReturns
     def send_command(self, command):
         """
             Method to send a single command to the server, printing the response.
