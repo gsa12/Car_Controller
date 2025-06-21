@@ -124,7 +124,7 @@ def ex_ai_depth(img_provided=None):
 
 
 def ex_ai_objects(img_source=None, single_frame=False):
-    frame = None
+    frame_single = None
     videoCap = None
 
     try:
@@ -137,9 +137,9 @@ def ex_ai_objects(img_source=None, single_frame=False):
         elif img_source is None:
             url, filename = ("https://github.com/pytorch/hub/raw/master/images/dog.jpg", "dog.jpg")
             urllib.request.urlretrieve(url, filename)
-            frame = cv2.imread(filename)
+            frame_single = cv2.imread(filename)
         else:
-            frame = img_source
+            frame_single = img_source
 
         def getColours(cls_num):
             base_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
@@ -202,8 +202,8 @@ def ex_ai_objects(img_source=None, single_frame=False):
                     return -1
         else:
             # Process single frame
-            res = yolo.predict(source=frame)
-            display_results(res, frame)
+            res = yolo.predict(source=frame_single)
+            display_results(res, frame_single)
 
             # wait for key press with timeout
             key_wait = 0 if single_frame else 1
