@@ -47,7 +47,7 @@ def __ex4(p):
     try:
         client = CarClient(port=p)
         running = True
-        ans = input("Stream? (y/n): ").strip().lower()
+        ans = input("Use the default stream link? (y/n): ").strip().lower()
         if ans == 'n':
             while running:
                 client.frame_updater()
@@ -123,7 +123,7 @@ def ex_ai_depth(img_provided=None):
     plt.show()  # This will actually display the images
 
 
-def ex_ai_objects(img_source=None, single_frame=False):
+def ex_ai_objects(img_source=None, single_frame=False, only_results=False):
     frame_single = None
     videoCap = None
 
@@ -186,6 +186,25 @@ def ex_ai_objects(img_source=None, single_frame=False):
             # show the image
             cv2.imshow('Object Tracking', current_frame)
 
+        def class_list(results=None):
+            """
+                This function is used to get only the results of the object detection without displaying them.
+                It can be used for further processing or analysis.
+            """
+            if results is None:
+                return None
+            else:
+                all_results = []
+                for result in results:
+                    classes = result.names
+                    for box in result.boxes:
+                        if box.conf[0] > 0.5:
+                            #It gets all the class names that have a confidence greater than 50 percent
+                            cls = int(box.cls[0])
+                            all_results.append(classes[cls])
+                return all_results
+
+
         if videoCap is not None:
             while videoCap.isOpened():
                 ret, current_frame = videoCap.read()
@@ -195,20 +214,24 @@ def ex_ai_objects(img_source=None, single_frame=False):
 
                 # Process with tracking enabled
                 res = yolo.track(source=current_frame, persist=True)
-                display_results(res, current_frame)
-
-                # Check for quit key
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    return -1
+                if only_results:
+                    return class_list(res)
+                else:
+                    display_results(res, current_frame)
+                    # Check for quit key
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        return -1
         else:
             # Process single frame
             res = yolo.predict(source=frame_single)
-            display_results(res, frame_single)
-
+            if only_results:
+                return class_list(res)
+            else:
             # wait for key press with timeout
-            key_wait = 0 if single_frame else 1
-            if cv2.waitKey(key_wait) & 0xFF == ord('q'):
-                return -1
+                display_results(res, frame_single)
+                key_wait = 0 if single_frame else 1
+                if cv2.waitKey(key_wait) & 0xFF == ord('q'):
+                    return -1
 
         return None
 
@@ -217,13 +240,11 @@ def ex_ai_objects(img_source=None, single_frame=False):
             videoCap.release()
 
 
-
-
 if __name__ == "__main__":
     p = 50000
     # ex_ai_depth()  # You can pass a file path or a NumPy array as an argument if needed
     # ex_ai_tests("path_to_your_image.jpg")  # Example of passing a file path
     # ex_ai_tests(np.random.rand(480, 640, 3))  # Example of passing a random NumPy array
     # ex_ai_objects()  # You can pass a file path or a NumPy array as an argument if needed
-    __ex3(p)
-    #__ex4(p)
+    #__ex3(p)
+    __ex4(p)
