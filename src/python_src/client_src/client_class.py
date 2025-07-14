@@ -29,6 +29,7 @@ class CarClient:
         self.client_socket = None
         self.current_frame = None
 
+        self.__video_cap = None
         self.__video_thread = None
         self.__stop_video_thread = threading.Event()
 

@@ -82,8 +82,8 @@ def average_slope_intercept(lines, image=None):
             elif angle <= 5:
                 horizontal_line = horizontal_line + 1
 
-    if horizontal_line > 2:
-        # If we have more than 2 horizontal lines detected, we assume it's a finish line
+    if horizontal_line > 1:
+        # If we have more than 1 horizontal line detected, we assume it's a finish line
         return 1, 1
 
     left_lane = np.dot(left_weights, left_lines) / np.sum(left_weights) if len(left_weights) > 0 else None
@@ -186,8 +186,11 @@ def car_road_circulate(p):
             high_t = 140
             kernel_size = 15
 
+            cv2.imshow("Original Frame", image)
             grayscale = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            cv2.imshow("Grayscale Frame", grayscale)
             blur = cv2.GaussianBlur(grayscale, (kernel_size, kernel_size), 2)
+            cv2.imshow("Blurred Frame", blur)
             edges = cv2.Canny(blur, low_t, high_t)
             region = region_selection(edges)
             hough_lines = cv2.HoughLinesP(region,
@@ -212,7 +215,14 @@ def car_road_circulate(p):
             left_line, right_line = lane_lines(image, hough_lines)
 
             if isinstance(left_line, int) and left_line == 1 and isinstance(right_line, int) and right_line == 1:
-                print("A horizontal line has been detected")
+                client.send_command("b", expected_response=False)
+                time.sleep(0.01)
+                client.send_command("b", expected_response=False)
+                print("A horizontal line has been detected!")
+                time_break_start = time.time()
+                while time.time() - time_break_start < 0.5:  # Wait for 0.5 seconds to stop the car
+                    client.send_command(" ", expected_response=False)
+                    time.sleep(0.05)
                 for i in range(5): #Do 5 checks before stopping the car
                     ret, image = cap.read()  # Read the next frame
                     classes = ex_ai_objects(img_source=image, only_results=True)
@@ -235,7 +245,7 @@ def car_road_circulate(p):
             else:
                 result = draw_lane_lines(image, (left_line, right_line))
                 #cv2.imshow('Blurred image', blur)
-                cv2.imshow('Lane Detection Canny in the desired Region', region)
+                cv2.imshow('Lane Detection Canny', edges)
                 cv2.imshow('Lane Detection Result', result)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break

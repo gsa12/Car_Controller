@@ -246,5 +246,5 @@ if __name__ == "__main__":
     # ex_ai_tests("path_to_your_image.jpg")  # Example of passing a file path
     # ex_ai_tests(np.random.rand(480, 640, 3))  # Example of passing a random NumPy array
     # ex_ai_objects()  # You can pass a file path or a NumPy array as an argument if needed
-    #__ex3(p)
-    __ex4(p)
+    __ex3(p)
+    # __ex4(p)

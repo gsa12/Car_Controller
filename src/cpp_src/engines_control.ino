@@ -15,6 +15,7 @@ const long interval = 100;                //10 measurements per second
 long int flag = 0;
 String receivedData, currentCommand = "", previousCommand = "";
 
+
 void setup() {
     Serial.begin(9600);
     pinMode(triggerPin, OUTPUT);
@@ -36,13 +37,14 @@ void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
 }
 
-//void loop(){
-//  //manualCar();
-//  //Serial.println(distMeasure());
-//  //Serial.println(sensor.getDistance());
-//  //delay(500);
+/*
+void loop(){
+//  manualCar();
+  Serial.println(distMeasure());
+  delay(500);
 //  autoCar();
-//}
+}
+*/
 
 void loop() {
     digitalWrite(LED_BUILTIN, HIGH);
@@ -104,6 +106,7 @@ void autoCar() {
                 }
                 LR_Flag = !LR_Flag;
                 digitalWrite(left_light, LOW);
+		digitalWrite(right_light, LOW);
             }
             carStop();
             digitalWrite(right_light, HIGH);
@@ -115,24 +118,31 @@ void autoCar() {
 }
 
 void manualCar() {
-    setSpeedLow();
+
     digitalWrite(LED_BUILTIN, LOW);
-    unsigned long lastCommandTime;
+    unsigned long lastCommandTime = millis();
     const unsigned long timeout = 100;
+    int backwards_time, max_backwards_time;
     while (true) {
-        if (distMeasure() < 15.0) {
+        float distMeasured = distMeasure();
+        if (distMeasured < 15.0 && distMeasured != 0) {
             digitalWrite(right_light, HIGH);
             digitalWrite(left_light, HIGH);
-            while (distMeasure() < 15.0) {
+	          backwards_time = millis();
+	          max_backwards_time = 2500;
+            setSpeedLow();
+            while (distMeasure() < 15.0 && millis() - backwards_time < max_backwards_time) {
                 carStop();
                 delay(500);
                 carBackwards();
                 delay(300);
             }
+            while(Serial.available()) Serial.read(); //To clean a possible buffer of commands
             carStop();
             delay(200);
             digitalWrite(right_light, LOW);
             digitalWrite(left_light, LOW);
+            currentCommand = "";
         }
         else {
             if (Serial.available() > 0) {
@@ -163,12 +173,14 @@ void manualCar() {
             }
 
             if (currentCommand == "f") {
+                setSpeedLow();
                 carForwardFixedSpeed();
             }
             else if (currentCommand == "l") {
                 carLeftTurn();
             }
             else if (currentCommand == "b") {
+                setSpeedLow();
                 carBackwards();
             }
             else if (currentCommand == "r") {
@@ -189,7 +201,7 @@ float distMeasure() {
     digitalWrite(triggerPin, LOW);
     delayMicroseconds(2);
 
-    duration = pulseIn(echoPin, HIGH);     //Measures the time the echo pin takes to recieve a "HIGH" input;
+    duration = pulseIn(echoPin, HIGH, 10000);     //Measures the time the echo pin takes to recieve a "HIGH" input;
 
     return (duration * 0.0343) / 2;
 }
@@ -281,15 +293,15 @@ void carRightTurn() {
 }
 
 void setSpeedLow() {
-    analogWrite(benR, 110);
-    analogWrite(benL, 110);
-    analogWrite(fenR, 110);
-    analogWrite(fenL, 110);
+    analogWrite(benR, 70);
+    analogWrite(benL, 70);
+    analogWrite(fenR, 70);
+    analogWrite(fenL, 70);
 }
 
 void setSpeedLowTurns() {
-    analogWrite(benR, 140);
-    analogWrite(benL, 140);
-    analogWrite(fenR, 140);
-    analogWrite(fenL, 140);
-}
+    analogWrite(benR, 135);
+    analogWrite(benL, 135);
+    analogWrite(fenR, 135);
+    analogWrite(fenL, 135);
+}}
