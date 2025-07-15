@@ -53,5 +53,5 @@ def __ex2(p):
 
 if __name__== "__main__":
     p = 50000
-    __ex1(p)
-    #__ex2(p)
+    # __ex1(p)
+    __ex2(p)

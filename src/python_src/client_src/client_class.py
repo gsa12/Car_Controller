@@ -115,22 +115,19 @@ class CarClient:
             print("There hasn't been established any connection yet.")
             return None
 
-        if cap_provided is None:
-            stream_url = f"http://{self.ip_host}:{vid_port}/raw_stream"
-            video_cap = cv2.VideoCapture(stream_url)
-        else:
-            video_cap = cap_provided
+        video_cap = cap_provided if cap_provided is not None else self.__video_cap
 
-        if video_cap.isOpened():
+        if video_cap is not None and video_cap.isOpened():
             ret, frame = video_cap.read()
             if ret:
                 self.current_frame = frame
             else:
                 print("There has been an error retrieving the frame.")
                 self.current_frame = None
-        if close:
+
+        if close and video_cap is not None:
             video_cap.release()
-            return None
+
         return None
 
     def __wasd_sender(self):
@@ -176,6 +173,9 @@ class CarClient:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.client_socket.connect((self.ip_host, self.port))
             self.client_socket.settimeout(5.0)
+            stream_url = "http://" + self.ip_host + ":" + "5000" + "/raw_stream"
+            self.__video_cap = cv2.VideoCapture(stream_url)
+            self.__video_cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             print("Connection established successfully")
             return 1
         except Exception as e:
@@ -191,19 +191,14 @@ class CarClient:
             Returns:
                 0 when the video feed has been closed
         """
-
-        video_cap = None
+        if self.__video_cap is None:
+            self.__video_cap = cv2.VideoCapture(f"http://{self.ip_host}:{vid_port}/raw_stream")
 
         try:
             self.__stop_video_thread.clear()
-            stream_url = "http://" + self.ip_host + ":" + vid_port + "/raw_stream"
-            print(stream_url + '\n')
-            video_cap = cv2.VideoCapture(stream_url)
-
-            video_cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             start_time = time.time()
-            while video_cap.isOpened() and (start_time+self.seconds)>time.time() and not self.__stop_video_thread.is_set():
-                flag, frame = video_cap.read()
+            while self.__video_cap.isOpened() and (start_time+self.seconds)>time.time() and not self.__stop_video_thread.is_set():
+                flag, frame = self.__video_cap.read()
                 if not flag:
                     print("There has been an error reading the current frame")
                     time.sleep(0.2)
@@ -222,7 +217,7 @@ class CarClient:
                             pass
                         break
         finally:
-            video_cap.release()
+            self.__video_cap.release()
             cv2.destroyAllWindows()
 
         return 1
