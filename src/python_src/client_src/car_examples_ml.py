@@ -45,10 +45,10 @@ def __ex3(p):
 def __ex4(p):
     client = None
     try:
-        client = CarClient(port=p)
-        running = True
         ans = input("Use the default stream link? (y/n): ").strip().lower()
         if ans == 'n':
+            client = CarClient(port=p)
+            running = True
             while running:
                 client.frame_updater()
                 if client.current_frame is not None:
@@ -60,7 +60,8 @@ def __ex4(p):
                     print("No frame available")
                     time.sleep(0.1)  # Prevent CPU overuse when no frames are available
         else:
-            ex_ai_objects("http://10.42.0.1:5000/raw_stream")
+            cap = "http://10.42.0.1:5000/raw_stream"
+            ex_ai_objects(cap)
     except Exception as e:
         print(f"There has been an error: {e}")
         print(f"Showing the default depth map.")
@@ -134,6 +135,8 @@ def ex_ai_objects(img_source=None, single_frame=False, only_results=False):
             if not videoCap.isOpened():
                 print(f"Failed to open video source: {img_source}")
                 return -1
+        elif isinstance(img_source, cv2.VideoCapture):
+            videoCap = img_source
         elif img_source is None:
             url, filename = ("https://github.com/pytorch/hub/raw/master/images/dog.jpg", "dog.jpg")
             urllib.request.urlretrieve(url, filename)
@@ -246,5 +249,5 @@ if __name__ == "__main__":
     # ex_ai_tests("path_to_your_image.jpg")  # Example of passing a file path
     # ex_ai_tests(np.random.rand(480, 640, 3))  # Example of passing a random NumPy array
     # ex_ai_objects()  # You can pass a file path or a NumPy array as an argument if needed
-    __ex3(p)
-    # __ex4(p)
+    # __ex3(p)
+    __ex4(p)
