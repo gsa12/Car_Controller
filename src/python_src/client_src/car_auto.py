@@ -10,7 +10,7 @@ from car_examples_ml import ex_ai_objects
 
 # Functions for image processing and lane detection ---------------------------------------
 
-def region_selection(image, ):
+def region_selection(image):
     """
     Determine and cut the region of interest in the input image.
     Parameters:
@@ -38,7 +38,7 @@ def region_selection(image, ):
     vertices = np.array([[bottom_left, middle_left,top_left, top_right, middle_right ,bottom_right]], dtype=np.int32)
     # filling the polygon with white color and generating the final mask
     cv2.fillPoly(mask, vertices, ignore_mask_color)
-    cv2.imshow('Mask', mask)
+    # cv2.imshow('Mask', mask)
     masked_image = cv2.bitwise_and(image, mask)
     return masked_image
 
@@ -165,32 +165,30 @@ def car_road_circulate(p):
 
     try:
         client = CarClient(port=p)
-        cap = cv2.VideoCapture("http://10.42.0.1:5000/raw_stream")
+        #cap = cv2.VideoCapture("http://10.42.0.1:5000/raw_stream")
         i = 0
 
         client.send_command("MANUAL", block_manual=False)
 
         while True:
-            ret, image = cap.read()
-            if not ret:
-                print("Failed to capture image from camera.")
-                while not ret:
-                    ret, image = cap.read()
-                    i = i + 1
-                    if i == 10:
-                        print("There have been too many missed frames, aborting.")
-                        break
+            client.frame_updater()
+            image = client.current_frame
+            #ret, image = cap.read()
+            #if not ret:
+            #    print("Failed to capture image from camera.")
+            #    while not ret:
+            #        ret, image = cap.read()
+            #        i = i + 1
+            #       if i == 10:
+            #           print("There have been too many missed frames, aborting.")
+            #          break
             #image = client.current_frame
-            i = 0
             low_t = 75
             high_t = 140
             kernel_size = 15
 
-            cv2.imshow("Original Frame", image)
             grayscale = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            cv2.imshow("Grayscale Frame", grayscale)
             blur = cv2.GaussianBlur(grayscale, (kernel_size, kernel_size), 2)
-            cv2.imshow("Blurred Frame", blur)
             edges = cv2.Canny(blur, low_t, high_t)
             region = region_selection(edges)
             hough_lines = cv2.HoughLinesP(region,
@@ -224,18 +222,20 @@ def car_road_circulate(p):
                     client.send_command(" ", expected_response=False)
                     time.sleep(0.05)
                 for i in range(5): #Do 5 checks before stopping the car
-                    ret, image = cap.read()  # Read the next frame
+                    client.frame_updater()  # Read the next frame
+                    image = client.current_frame
                     classes = ex_ai_objects(img_source=image, only_results=True)
                     time.sleep(0.2) # Wait for a second before sending the next command, and for the AI to process
                     if classes is not None and "person" in classes or "dog" in classes:
                         print("A person or dog has been detected after the horizotal line, keeping the car stopped.")
                         while "person" in classes or "dog" in classes:
-                            ret, image = cap.read()  # Read the next frame
+                            client.frame_updater()  # Read the next frame
+                            image = client.current_frame
                             cv2.imshow("Current frame (with a person or a dog)", image)
                             cv2.waitKey(1)
-                            if not ret:
-                                print("Failed to capture image from camera.")
-                                break
+                            #if not ret:
+                            #    print("Failed to capture image from camera.")
+                            #    break
                             time.sleep(0.2) # Wait for a short time before checking again
                             print("A person or dog has been detected, keeping the car stopped.")
                             classes = ex_ai_objects(img_source=image, only_results=True)
